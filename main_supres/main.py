@@ -542,7 +542,7 @@ def action(ticker, sma_windows={}):
 
 @st.cache
 def get_listing(market: str) -> pd.DataFrame:
-	s = StockTicker(database_url='duckdb:///codes.ddb', read_only=True)
+	s = StockTicker(database_url='duckdb:///main_supres/codes.ddb', read_only=True)
 	df = s.get_listing(market)
 	df = df.dropna()
 	return df
