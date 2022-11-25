@@ -10,6 +10,8 @@ from binance.client import Client
 from stock_ticker import StockTicker
 import streamlit as st
 from typing import Dict
+from dateutil.relativedelta import relativedelta
+from datetime import datetime, timedelta
 
 @dataclass
 class Values:
@@ -44,12 +46,20 @@ class Supres(Values):
 		if normal_ticker != yahoo_ticker:
 			ticker = stockticker.get_name(normal_ticker)
 
-		df = yf.download(yahoo_ticker, interval=selected_timeframe)[-candle_count:]
+		start = None
+		limits = {'1m': 7, '2m': 60, '5m': 60, '15m': 60, '30m': 60, '60m': 730, '90m': 60, '1h': 730, '1d': None, '5d': None, '1wk': None, '1mo': None, '3mo': None,}
+		limit = limits.get(selected_timeframe)
+		if limit is not None:
+			start = datetime.today() - relativedelta(days=limit)
+		df = yf.download(yahoo_ticker, start=start, interval=selected_timeframe)[-candle_count:]
 
 		if len(df) < candle_count:
-			st.warning(f"**{ticker}** is does not have enought candles to display")
+			st.warning(f"**{ticker}** does not have enought candles to display ({len(df)})")
+			st.write(df)
 			return
 
+		if df.index.name == 'Datetime':
+			df.index.name = 'Date'
 		df.reset_index(inplace=True)
 		df.columns = [x.lower() for x in df.columns]
 		df = pd.concat([df, df.tail(1)], axis=0, ignore_index=True)
@@ -405,7 +415,8 @@ class Supres(Values):
 			text_and_indicators()
 			legend_fibonacci()
 			# Candle patterns for HTF
-			if selected_timeframe in historical_hightimeframe:
+			# if selected_timeframe in historical_hightimeframe:
+			if not selected_timeframe[-1] in ('h', 'm'):
 				legend_candle_patterns()
 
 		def chart_updates() -> None:
@@ -510,7 +521,7 @@ class Supres(Values):
 		st.plotly_chart(fig, use_container_width=True)
 
 
-def action(ticker, sma_windows={}):
+def action(ticker, selected_timeframe='1d', sma_windows={}):
 	if False:
 		import historical_data
 
@@ -537,7 +548,7 @@ def action(ticker, sma_windows={}):
 
 	else:
 		perf = time.perf_counter()
-		Supres.main(ticker, sma_windows=sma_windows)
+		Supres.main(ticker, selected_timeframe=selected_timeframe, sma_windows=sma_windows)
 
 
 @st.cache
@@ -556,7 +567,7 @@ if __name__ == "__main__":
 	ticker = None
 	with st.sidebar:
 		st.write("## Ticker Settings")
-		kind = st.radio('Select one', ['by Name', 'by Ticker', 'from List'], index=2)
+		kind = st.radio('Select search type', ['by Name', 'by Ticker', 'from List'], index=2)
 		ticker = None
 		if kind == 'by Name':
 			ticker = st.text_input('Stock Name:', '')
@@ -573,7 +584,9 @@ if __name__ == "__main__":
 
 			code_name = st.selectbox('Stock Ticker:', df.code + ' (' + df.name + ')', index=index)
 			ticker = code_name.split(' ')[0]
-			st.write(ticker)
+
+		st.write("## Data Fetch Setting")
+		selected_timeframe = st.selectbox('Select timeframe', ['1m', '2m', '5m', '15m', '30m', '60m', '90m', '1h', '1d', '5d', '1wk', '1mo', '3mo'], index=8)
 
 		st.write("## SMA Window Settings")
 		ma_length1 = st.number_input('SMA1 Window', min_value=5, value=20)
@@ -582,4 +595,4 @@ if __name__ == "__main__":
 		sma_windows = {'sma1_window': ma_length1, 'sma2_window': ma_length2, 'sma3_window': ma_length3}
 
 	if kind == 'from List' or st.sidebar.button('Go'):
-		action(ticker, sma_windows=sma_windows)
+		action(ticker, selected_timeframe=selected_timeframe, sma_windows=sma_windows)
