@@ -38,7 +38,7 @@ class Supres(Values):
 
 	@staticmethod
 	def main(ticker, selected_timeframe='1d', candle_count=254, sma_windows={}):
-		stockticker = StockTicker(database_url='duckdb:///codes.ddb', read_only=True)
+		stockticker = StockTicker(database_url='duckdb:///main_supres/codes.ddb', read_only=True)
 		normal_ticker = stockticker.normalize(ticker, yahoo=False)
 		yahoo_ticker = stockticker.normalize(ticker, yahoo=True)
 		if normal_ticker != yahoo_ticker:
