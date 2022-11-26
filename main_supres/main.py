@@ -54,7 +54,9 @@ class Supres(Values):
 			start = datetime.today() - relativedelta(days=limit-1)
 			# st.write(start)
 		# df = yf.download(yahoo_ticker, start=start, interval=selected_timeframe)[-candle_count:]
-		df = yf.Ticker(yahoo_ticker).history(start=start, interval=selected_timeframe)[-candle_count:]
+		yfticker = yf.Ticker(yahoo_ticker)
+		st.write(f"### {yfticker.info['shortName']}")
+		df = yfticker.history(start=start, interval=selected_timeframe, period='max')[-candle_count:]
 
 		if len(df) < candle_count:
 			st.warning(f"**{ticker}** does not have enought candles to display ({len(df)})")
@@ -68,6 +70,7 @@ class Supres(Values):
 		df.dropna(inplace=True)
 
 		Supres._main(ticker, df, selected_timeframe=selected_timeframe, candle_count=candle_count)
+		st.write(f"{yfticker.info['longBusinessSummary']}")
 
 	@staticmethod
 	def _main(ticker, df, selected_timeframe='1D', candle_count=254):
@@ -588,7 +591,7 @@ if __name__ == "__main__":
 			ticker = code_name.split(' ')[0]
 
 		st.write("## Data Fetch Setting")
-		selected_timeframe = st.selectbox('Select timeframe', ['1m', '2m', '5m', '15m', '30m', '60m', '90m', '1h', '1d', '5d', '1wk', '1mo', '3mo'], index=8)
+		selected_timeframe = st.selectbox('Timeframe', ['1m', '2m', '5m', '15m', '30m', '60m', '90m', '1h', '1d', '5d', '1wk', '1mo', '3mo'], index=8)
 		candle_count = st.number_input('Number of candles', min_value=100, value=254)
 
 		st.write("## SMA Window Settings")
