@@ -49,17 +49,19 @@ class Supres(Values):
 		start = None
 		limits = {'1m': 7, '2m': 60, '5m': 60, '15m': 60, '30m': 60, '60m': 730, '90m': 60, '1h': 730, '1d': None, '5d': None, '1wk': None, '1mo': None, '3mo': None,}
 		limit = limits.get(selected_timeframe)
+		# st.write(f"selected_timeframe: {selected_timeframe}")
 		if limit is not None:
-			start = datetime.today() - relativedelta(days=limit)
-		df = yf.download(yahoo_ticker, start=start, interval=selected_timeframe)[-candle_count:]
+			start = datetime.today() - relativedelta(days=limit-1)
+			# st.write(start)
+		# df = yf.download(yahoo_ticker, start=start, interval=selected_timeframe)[-candle_count:]
+		df = yf.Ticker(yahoo_ticker).history(start=start, interval=selected_timeframe)[-candle_count:]
 
 		if len(df) < candle_count:
 			st.warning(f"**{ticker}** does not have enought candles to display ({len(df)})")
 			st.write(df)
 			return
 
-		if df.index.name == 'Datetime':
-			df.index.name = 'Date'
+		df.index.name = 'Date'
 		df.reset_index(inplace=True)
 		df.columns = [x.lower() for x in df.columns]
 		df = pd.concat([df, df.tail(1)], axis=0, ignore_index=True)
@@ -521,7 +523,7 @@ class Supres(Values):
 		st.plotly_chart(fig, use_container_width=True)
 
 
-def action(ticker, selected_timeframe='1d', sma_windows={}):
+def action(ticker, selected_timeframe='1d', sma_windows={}, candle_count=254):
 	if False:
 		import historical_data
 
@@ -548,7 +550,7 @@ def action(ticker, selected_timeframe='1d', sma_windows={}):
 
 	else:
 		perf = time.perf_counter()
-		Supres.main(ticker, selected_timeframe=selected_timeframe, sma_windows=sma_windows)
+		Supres.main(ticker, selected_timeframe=selected_timeframe, sma_windows=sma_windows, candle_count=candle_count)
 
 
 @st.cache
@@ -587,6 +589,7 @@ if __name__ == "__main__":
 
 		st.write("## Data Fetch Setting")
 		selected_timeframe = st.selectbox('Select timeframe', ['1m', '2m', '5m', '15m', '30m', '60m', '90m', '1h', '1d', '5d', '1wk', '1mo', '3mo'], index=8)
+		candle_count = st.number_input('Number of candles', min_value=100, value=254)
 
 		st.write("## SMA Window Settings")
 		ma_length1 = st.number_input('SMA1 Window', min_value=5, value=20)
@@ -595,4 +598,4 @@ if __name__ == "__main__":
 		sma_windows = {'sma1_window': ma_length1, 'sma2_window': ma_length2, 'sma3_window': ma_length3}
 
 	if kind == 'from List' or st.sidebar.button('Go'):
-		action(ticker, selected_timeframe=selected_timeframe, sma_windows=sma_windows)
+		action(ticker, selected_timeframe=selected_timeframe, sma_windows=sma_windows, candle_count=candle_count)
