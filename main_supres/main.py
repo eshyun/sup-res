@@ -55,7 +55,7 @@ class Supres(Values):
 			# st.write(start)
 		# df = yf.download(yahoo_ticker, start=start, interval=selected_timeframe)[-candle_count:]
 		yfticker = yf.Ticker(yahoo_ticker)
-		st.write(f"### {yfticker.info['shortName']}")
+		st.write(f"### {yfticker.info.get('shortName')}")
 		df = yfticker.history(start=start, interval=selected_timeframe, period='max')[-candle_count:]
 
 		if len(df) < candle_count:
